@@ -1,4 +1,4 @@
 [submodule "coredns"]
 	path = coredns
 	url = https://github.com/Kuadrant/coredns
-	branch = main
+	branch = kuadrant_plugin
