@@ -2,16 +2,10 @@ FROM registry.redhat.io/ubi9/go-toolset:latest AS builder
 
 WORKDIR /workspace
 
-# Copy the Go Modules manifests
-COPY coredns/go.mod go.mod
-COPY coredns/go.sum go.sum
-
-# Cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
-
 # Copy the go source
 COPY ./coredns/*.go ./
+COPY ./coredns/go.mod go.mod
+COPY ./coredns/go.sum go.sum
 COPY ./coredns/core/ core/
 COPY ./coredns/coremain/ coremain/
 COPY ./coredns/plugin/ plugin/
