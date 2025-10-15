@@ -12,7 +12,7 @@ COPY ./coredns/coremain/ coremain/
 COPY ./coredns/plugin/ plugin/
 COPY ./coredns/request/ request/
 COPY ./coredns/pb/ pb/
-COPY ./licenses licenses/
+COPY coredns/LICENSE /licenses/LICENSE
 
 # Build CoreDNS with the Kuadrant plugin
 RUN GO111MODULE=on go build -o coredns .
@@ -21,7 +21,8 @@ USER 1001
 FROM registry.redhat.io/ubi9/ubi-minimal:latest
 USER 1001
 COPY --from=builder /workspace/coredns /usr/bin/coredns
-COPY --from=builder /licenses licenses
+COPY --from=builder licenses/LICENSE /licenses/LICENSE
+
 
 ENTRYPOINT ["/usr/bin/coredns"]
 
