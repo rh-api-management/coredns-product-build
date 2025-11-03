@@ -22,6 +22,8 @@ FROM registry.redhat.io/ubi9/ubi-minimal:latest
 USER 1001
 COPY --from=builder /workspace/coredns /usr/bin/coredns
 COPY --from=builder licenses/LICENSE /licenses/LICENSE
+USER nonroot:nonroot
+EXPOSE 53 53/udp
 
 
 ENTRYPOINT ["/usr/bin/coredns"]
