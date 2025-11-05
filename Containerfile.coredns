@@ -18,15 +18,24 @@ COPY coredns/LICENSE /licenses/LICENSE
 RUN GO111MODULE=on go build -o coredns .
 USER 1001
 
+FROM registry.redhat.io/ubi9/ubi-minimal:latest AS build
+USER root
+# Based on https://github.com/coredns/coredns/blob/master/Dockerfile
+# Requires ths stage to avoid "Listen tcp :53: bind: permission denied" errors in nonroot containers.
+SHELL [ "/bin/sh", "-ec" ]
+COPY --from=builder /workspace/coredns /coredns
+RUN setcap cap_net_bind_service=+ep /coredns
+USER 1001
+
 FROM registry.redhat.io/ubi9/ubi-minimal:latest
 USER 1001
-COPY --from=builder /workspace/coredns /usr/bin/coredns
+COPY --from=build /coredns /coredns
 COPY --from=builder licenses/LICENSE /licenses/LICENSE
 USER nonroot:nonroot
 EXPOSE 53 53/udp
 
 
-ENTRYPOINT ["/usr/bin/coredns"]
+ENTRYPOINT ["/coredns"]
 
 LABEL version="1.2.0" \
       summary="Red Hat CoreDNS Container Image" \
