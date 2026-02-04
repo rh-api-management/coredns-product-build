@@ -37,10 +37,11 @@ EXPOSE 53 53/udp
 
 ENTRYPOINT ["/coredns"]
 
-LABEL version="1.2.0" \
+LABEL version="1.3.0" \
       summary="Red Hat CoreDNS Container Image" \
       description="Red Hat CoreDNS is a DNS server that chains plugins" \
-      name="coredns" \
+      name="rhcl-1/coredns-rhel9" \
+      cpe="cpe:/a:redhat:connectivity_link:1::el9" \
       com.redhat.component="Red Hat CoreDNS" \
       io.k8s.display-name="Red Hat CoreDNS" \
       io.k8s.description="CoreDNS is a fast and flexible DNS server" \
