@@ -1,4 +1,4 @@
 [submodule "coredns"]
 	path = coredns
 	url = https://github.com/Kuadrant/coredns
-	branch = kuadrant_plugin
+	branch = release-rhcl-1.3
