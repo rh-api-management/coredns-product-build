@@ -3,25 +3,24 @@ USER root
 
 WORKDIR /workspace
 
-# Copy the go source
-COPY ./coredns/*.go ./
-COPY ./coredns/go.mod go.mod
-COPY ./coredns/go.sum go.sum
-COPY ./coredns/core/ core/
-COPY ./coredns/coremain/ coremain/
-COPY ./coredns/plugin/ plugin/
-COPY ./coredns/request/ request/
-COPY ./coredns/pb/ pb/
-COPY coredns/LICENSE /licenses/LICENSE
+# Copy the go source from dns-operator/coredns/plugin
+COPY ./dns-operator/coredns/plugin/go.mod go.mod
+COPY ./dns-operator/coredns/plugin/go.sum go.sum
+COPY ./dns-operator/coredns/plugin/*.go ./
+COPY ./dns-operator/coredns/plugin/cmd/ cmd/
+COPY ./dns-operator/coredns/plugin/dnsop/ dnsop/
+COPY ./dns-operator/coredns/plugin/geoip/ geoip/
+COPY ./dns-operator/LICENSE /licenses/LICENSE
 
 # Build CoreDNS with the Kuadrant plugin
-RUN GO111MODULE=on go build -o coredns .
+# Note: main package is in cmd/ subdirectory
+RUN CGO_ENABLED=0 GO111MODULE=on go build -o coredns ./cmd/
 USER 1001
 
 FROM registry.redhat.io/ubi9/ubi-minimal:latest AS build
 USER root
 # Based on https://github.com/coredns/coredns/blob/master/Dockerfile
-# Requires ths stage to avoid "Listen tcp :53: bind: permission denied" errors in nonroot containers.
+# Requires this stage to avoid "Listen tcp :53: bind: permission denied" errors in nonroot containers.
 SHELL [ "/bin/sh", "-ec" ]
 COPY --from=builder /workspace/coredns /coredns
 RUN setcap cap_net_bind_service=+ep /coredns
@@ -30,7 +29,7 @@ USER 1001
 FROM registry.redhat.io/ubi9/ubi-minimal:latest
 USER 1001
 COPY --from=build /coredns /coredns
-COPY --from=builder licenses/LICENSE /licenses/LICENSE
+COPY --from=builder /licenses/LICENSE /licenses/LICENSE
 USER nonroot:nonroot
 EXPOSE 53 53/udp
 
