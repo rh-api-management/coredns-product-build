@@ -27,7 +27,7 @@ spec:
   - name: dockerfile
     value: Containerfile.coredns
   - name: prefetch-input
-    value: '[{"type": "gomod", "path": "coredns/"}]'
+    value: '[{"type": "gomod", "path": "dns-operator/coredns/plugin/"}]'
   pipelineRef:
     name: build-pipeline
   taskRunTemplate:

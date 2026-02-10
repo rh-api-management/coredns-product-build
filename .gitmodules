@@ -1,4 +1,4 @@
-[submodule "coredns"]
-	path = coredns
-	url = https://github.com/Kuadrant/coredns
-	branch = release-rhcl-1.3
+[submodule "dns-operator"]
+	path = dns-operator
+	url = https://github.com/kuadrant/dns-operator
+	branch = release-0.16
