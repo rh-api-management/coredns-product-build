@@ -1,6 +1,9 @@
 FROM registry.redhat.io/ubi9/go-toolset:latest AS builder
 USER root
 
+ARG GIT_SHA=unknown
+ARG VERSION=unknown
+
 WORKDIR /workspace
 
 # Copy the go source from dns-operator/coredns/plugin
@@ -14,7 +17,7 @@ COPY ./dns-operator/LICENSE /licenses/LICENSE
 
 # Build CoreDNS with the Kuadrant plugin
 # Note: main package is in cmd/ subdirectory
-RUN CGO_ENABLED=0 GO111MODULE=on go build -o coredns ./cmd/
+RUN CGO_ENABLED=0 GO111MODULE=on go build -ldflags "-X main.pluginVersion=${VERSION} -X main.gitSHA=${GIT_SHA}" -o coredns ./cmd/
 USER 1001
 
 FROM registry.redhat.io/ubi9/ubi-minimal:latest AS build
@@ -30,9 +33,7 @@ FROM registry.redhat.io/ubi9/ubi-minimal:latest
 USER 1001
 COPY --from=build /coredns /coredns
 COPY --from=builder /licenses/LICENSE /licenses/LICENSE
-USER nonroot:nonroot
 EXPOSE 53 53/udp
-
 
 ENTRYPOINT ["/coredns"]
 
