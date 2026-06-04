@@ -63,17 +63,20 @@ jobs:
           git fetch --tags
           git checkout "$LATEST_TAG"
 
-      - name: Update version in Containerfile
+      - name: Update PLUGIN_VERSION in Tekton pipelines
         if: steps.compare.outputs.comparison-result == '>'
         run: |
           LATEST_TAG="${{ steps.latest_version.outputs.tag }}"
           VERSION_NUM=${LATEST_TAG#v}
 
-          # Update the LABEL version line in Containerfile.coredns
-          sed -i "s/^LABEL version=\"[^\"]*\"/LABEL version=\"$VERSION_NUM\"/" Containerfile.coredns
+          # Update PLUGIN_VERSION build arg in Tekton pipeline files
+          sed -i "s/PLUGIN_VERSION=[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*/PLUGIN_VERSION=$VERSION_NUM/" \
+            .tekton/rhcl-1-4-coredns-pull-request.yaml \
+            .tekton/rhcl-1-4-coredns-push.yaml
 
-          echo "Updated Containerfile.coredns version to $VERSION_NUM"
-          cat Containerfile.coredns | grep "LABEL version"
+          echo "Updated PLUGIN_VERSION to $VERSION_NUM in Tekton pipelines"
+          grep "PLUGIN_VERSION" .tekton/rhcl-1-4-coredns-pull-request.yaml
+          grep "PLUGIN_VERSION" .tekton/rhcl-1-4-coredns-push.yaml
 
       - name: Create Pull Request
         if: steps.compare.outputs.comparison-result == '>'
@@ -84,11 +87,11 @@ jobs:
             Bump coredns submodule to ${{ steps.latest_version.outputs.tag }}
 
             This automated update bumps the coredns submodule to ${{ steps.latest_version.outputs.tag }}
-            and updates the version in Containerfile.coredns accordingly.
+            and updates the PLUGIN_VERSION build arg in Tekton pipelines.
 
             Updated files:
             - dns-operator submodule -> ${{ steps.latest_version.outputs.tag }}
-            - Containerfile.coredns version label
+            - Tekton pipeline PLUGIN_VERSION build arg
           branch: auto/bump-coredns-${{ steps.latest_version.outputs.tag }}
           delete-branch: true
           title: 'chore: Bump coredns submodule to ${{ steps.latest_version.outputs.tag }}'
@@ -99,11 +102,11 @@ jobs:
 
             ## Changes
             - Updated dns-operator submodule to tag ${{ steps.latest_version.outputs.tag }}
-            - Updated version in `Containerfile.coredns` to match
+            - Updated `PLUGIN_VERSION` build arg in Tekton pipelines to match
 
             ## Testing
             - [ ] Verify the submodule points to the correct tag
-            - [ ] Check that the Containerfile version matches the submodule tag
+            - [ ] Check that PLUGIN_VERSION in Tekton pipelines matches the submodule tag
             - [ ] Run build tests to ensure compatibility
 
             ---
