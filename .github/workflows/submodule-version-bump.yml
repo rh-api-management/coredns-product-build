@@ -54,6 +54,19 @@ jobs:
           version: ${{ steps.latest_version.outputs.tag }}
           compare-to: ${{ steps.current_version.outputs.tag }}
 
+      - name: Determine target version
+        id: target
+        run: |
+          if [ "${{ steps.compare.outputs.comparison-result }}" = ">" ]; then
+            TARGET_TAG="${{ steps.latest_version.outputs.tag }}"
+          else
+            TARGET_TAG="${{ steps.current_version.outputs.tag }}"
+          fi
+          VERSION_NUM=${TARGET_TAG#v}
+          echo "tag=$TARGET_TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION_NUM" >> $GITHUB_OUTPUT
+          echo "Target version: $TARGET_TAG ($VERSION_NUM)"
+
       - name: Update submodule to latest tag
         if: steps.compare.outputs.comparison-result == '>'
         working-directory: dns-operator
@@ -63,46 +76,56 @@ jobs:
           git fetch --tags
           git checkout "$LATEST_TAG"
 
-      - name: Update PLUGIN_VERSION in Tekton pipelines
-        if: steps.compare.outputs.comparison-result == '>'
+      - name: Sync PLUGIN_VERSION in Tekton pipelines
+        id: sync_tekton
         run: |
-          LATEST_TAG="${{ steps.latest_version.outputs.tag }}"
-          VERSION_NUM=${LATEST_TAG#v}
+          VERSION_NUM="${{ steps.target.outputs.version }}"
 
           # Update PLUGIN_VERSION build arg in Tekton pipeline files
           sed -i "s/PLUGIN_VERSION=[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*/PLUGIN_VERSION=$VERSION_NUM/" \
             .tekton/rhcl-1-4-coredns-pull-request.yaml \
             .tekton/rhcl-1-4-coredns-push.yaml
 
-          echo "Updated PLUGIN_VERSION to $VERSION_NUM in Tekton pipelines"
+          echo "PLUGIN_VERSION in Tekton pipelines:"
           grep "PLUGIN_VERSION" .tekton/rhcl-1-4-coredns-pull-request.yaml
           grep "PLUGIN_VERSION" .tekton/rhcl-1-4-coredns-push.yaml
 
+      - name: Check for changes
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git status --short
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes needed"
+          fi
+
       - name: Create Pull Request
-        if: steps.compare.outputs.comparison-result == '>'
+        if: steps.changes.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: |
-            Bump coredns submodule to ${{ steps.latest_version.outputs.tag }}
+            Sync coredns version to ${{ steps.target.outputs.tag }}
 
-            This automated update bumps the coredns submodule to ${{ steps.latest_version.outputs.tag }}
-            and updates the PLUGIN_VERSION build arg in Tekton pipelines.
+            This automated update syncs the coredns version to ${{ steps.target.outputs.tag }}.
 
             Updated files:
-            - dns-operator submodule -> ${{ steps.latest_version.outputs.tag }}
+            - dns-operator submodule
             - Tekton pipeline PLUGIN_VERSION build arg
-          branch: auto/bump-coredns-${{ steps.latest_version.outputs.tag }}
+          branch: auto/bump-coredns-${{ steps.target.outputs.tag }}
           delete-branch: true
-          title: 'chore: Bump coredns submodule to ${{ steps.latest_version.outputs.tag }}'
+          title: 'chore: Sync coredns version to ${{ steps.target.outputs.tag }}'
           body: |
             ## Summary
 
-            This automated PR bumps the dns-operator submodule from `${{ steps.current_version.outputs.tag }}` to `${{ steps.latest_version.outputs.tag }}`.
+            This automated PR syncs the coredns version to `${{ steps.target.outputs.tag }}`.
 
             ## Changes
-            - Updated dns-operator submodule to tag ${{ steps.latest_version.outputs.tag }}
-            - Updated `PLUGIN_VERSION` build arg in Tekton pipelines to match
+            - dns-operator submodule pinned to ${{ steps.target.outputs.tag }}
+            - `PLUGIN_VERSION` build arg in Tekton pipelines set to ${{ steps.target.outputs.version }}
 
             ## Testing
             - [ ] Verify the submodule points to the correct tag
@@ -122,9 +145,11 @@ jobs:
           echo "## Version Check Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Current version: ${{ steps.current_version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- Latest version: ${{ steps.latest_version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Target version: ${{ steps.target.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- Comparison: ${{ steps.compare.outputs.comparison-result }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.compare.outputs.comparison-result }}" = ">" ]; then
+          echo "- Changes detected: ${{ steps.changes.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.changes.outputs.has_changes }}" = "true" ]; then
             echo "- PR created: ✅" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- No update needed" >> $GITHUB_STEP_SUMMARY
+            echo "- No changes needed" >> $GITHUB_STEP_SUMMARY
           fi
