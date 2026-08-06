@@ -17,7 +17,10 @@ COPY ./dns-operator/LICENSE /licenses/LICENSE
 
 # Build CoreDNS with the Kuadrant plugin
 # Note: main package is in cmd/ subdirectory
-RUN CGO_ENABLED=0 GO111MODULE=on go build -ldflags "-X main.pluginVersion=${PLUGIN_VERSION} -X main.gitSHA=${GIT_SHA}" -o coredns ./cmd/
+RUN CGO_ENABLED=1 GOEXPERIMENT=strictfipsruntime GO111MODULE=on go build \
+    -tags strictfipsruntime \
+    -ldflags "-X main.pluginVersion=${PLUGIN_VERSION} -X main.gitSHA=${GIT_SHA}" \
+    -o coredns ./cmd/
 USER 1001
 
 FROM registry.redhat.io/ubi9/ubi-minimal:latest AS build
