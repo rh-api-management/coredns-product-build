@@ -33,7 +33,7 @@ spec:
     value: '[{"type": "gomod", "path": "dns-operator/coredns/plugin/"}]'
   - name: build-args
     value:
-    - PLUGIN_VERSION=0.17.0
+    - PLUGIN_VERSION=0.17.1
     - GIT_SHA={{revision}}
   pipelineRef:
     name: build-pipeline
