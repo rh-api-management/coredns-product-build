@@ -83,12 +83,12 @@ jobs:
 
           # Update PLUGIN_VERSION build arg in Tekton pipeline files
           sed -i "s/PLUGIN_VERSION=[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*/PLUGIN_VERSION=$VERSION_NUM/" \
-            .tekton/rhcl-1-4-coredns-pull-request.yaml \
-            .tekton/rhcl-1-4-coredns-push.yaml
+            .tekton/rhcl-1-5-coredns-pull-request.yaml \
+            .tekton/rhcl-1-5-coredns-push.yaml
 
           echo "PLUGIN_VERSION in Tekton pipelines:"
-          grep "PLUGIN_VERSION" .tekton/rhcl-1-4-coredns-pull-request.yaml
-          grep "PLUGIN_VERSION" .tekton/rhcl-1-4-coredns-push.yaml
+          grep "PLUGIN_VERSION" .tekton/rhcl-1-5-coredns-pull-request.yaml
+          grep "PLUGIN_VERSION" .tekton/rhcl-1-5-coredns-push.yaml
 
       - name: Check for changes
         id: changes
